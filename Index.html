@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minecraft Structure Command Generator</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
+        button, input { margin: 10px; padding: 10px; }
+        .command-list { margin-top: 20px; text-align: left; }
+        .list-section { display: none; }
+        .list-section.active { display: block; }
+        .copy-btn { margin: 5px 0; }
+    </style>
+</head>
+<body>
+    <h1>Structure Command Generator</h1>
+    <input type="file" id="structureFile" accept=".mcstructure">
+    <button onclick="processFile()">Convert</button>
+    <div id="commandContainer"></div>
+
+    <script>
+        const MAX_LENGTH = 1024;
+
+        function processFile() {
+            const fileInput = document.getElementById('structureFile');
+            const commandContainer = document.getElementById('commandContainer');
+            commandContainer.innerHTML = ''; // Clear previous output
+
+            if (fileInput.files.length === 0) {
+                alert('Please upload a .mcstructure file.');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function (event) {
+                const data = event.target.result;
+
+                // Simulate parsing and generating commands
+                const commands = generateOptimizedCommands(data); // Replace with real parsing logic
+                displayCommands(commands);
+            };
+
+            reader.readAsArrayBuffer(file);
+        }
+
+        function generateOptimizedCommands(data) {
+            // Placeholder logic for generating commands
+            const commands = [];
+            const structureSize = 16; // Example structure size (replace with real dimensions)
+
+            for (let x = 0; x < structureSize; x++) {
+                for (let y = 0; y < structureSize; y++) {
+                    for (let z = 0; z < structureSize; z++) {
+                        const blockType = "stone"; // Replace with block type from `.mcstructure`
+                        const rotation = "0"; // Replace with rotation data if needed
+                        if (x % 2 === 0 && z % 2 === 0) {
+                            // Example: group nearby blocks
+                            commands.push(`/fill ${x} ${y} ${z} ${x + 1} ${y} ${z + 1} ${blockType}`);
+                        } else {
+                            commands.push(`/setblock ${x} ${y} ${z} ${blockType}[facing=${rotation}]`);
+                        }
+                    }
+                }
+            }
+
+            return commands;
+        }
+
+        function displayCommands(commands) {
+            const commandContainer = document.getElementById('commandContainer');
+            const chunks = splitCommands(commands, MAX_LENGTH);
+
+            chunks.forEach((chunk, index) => {
+                const section = document.createElement('div');
+                section.classList.add('list-section');
+                if (index === 0) section.classList.add('active');
+
+                const header = document.createElement('h3');
+                header.textContent = `Commands (Part ${index + 1})`;
+
+                const pre = document.createElement('pre');
+                pre.textContent = chunk.join('\n');
+
+                const copyButton = document.createElement('button');
+                copyButton.textContent = "Copy Commands";
+                copyButton.classList.add('copy-btn');
+                copyButton.onclick = () => copyToClipboard(chunk.join('\n'));
+
+                section.appendChild(header);
+                section.appendChild(pre);
+                section.appendChild(copyButton);
+
+                commandContainer.appendChild(section);
+            });
+
+            if (chunks.length > 1) createPagination(commandContainer, chunks.length);
+        }
+
+        function splitCommands(commands, maxLength) {
+            const chunks = [];
+            let currentChunk = [];
+            let currentLength = 0;
+
+            commands.forEach(cmd => {
+                if (currentLength + cmd.length + 1 > maxLength) {
+                    chunks.push(currentChunk);
+                    currentChunk = [];
+                    currentLength = 0;
+                }
+                currentChunk.push(cmd);
+                currentLength += cmd.length + 1;
+            });
+
+            if (currentChunk.length > 0) chunks.push(currentChunk);
+            return chunks;
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Commands copied to clipboard!');
+            });
+        }
+
+        function createPagination(container, totalSections) {
+            const pagination = document.createElement('div');
+            pagination.innerHTML = '<h3>Navigation</h3>';
+
+            for (let i = 0; i < totalSections; i++) {
+                const button = document.createElement('button');
+                button.textContent = `Part ${i + 1}`;
+                button.onclick = () => {
+                    document.querySelectorAll('.list-section').forEach((section, index) => {
+                        section.classList.toggle('active', index === i);
+                    });
+                };
+                pagination.appendChild(button);
+            }
+
+            container.appendChild(pagination);
+        }
+    </script>
+</body>
+</html>
